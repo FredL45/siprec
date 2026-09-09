@@ -1204,6 +1204,7 @@ func (s *CustomSIPServer) handleSiprecInvite(message *SIPMessage) {
 	s.logger.WithFields(logrus.Fields{
     "has_crlf":     bytes.Contains(message.Body, []byte("\r\n")),
     "has_lone_lf":  bytes.Contains(message.Body, []byte("\n")) && !bytes.Contains(message.Body, []byte("\r\n")),
+    "full_body": fmt.Sprintf("%q", message.Body),
     "last_80_bytes": fmt.Sprintf("%q", message.Body[max(0, len(message.Body)-80):]),
 	}).Debug("Raw body line-ending check")
 	
