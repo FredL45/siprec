@@ -5,11 +5,31 @@ import (
 	"net"
 )
 
-// normalizeCRLF replaces bare \n (not preceded by \r) with \r\n in SIP messages.
-// This handles non-compliant devices that send LF-only line endings instead of
-// the CRLF required by RFC 3261 Section 7.
-func normalizeCRLF(data []byte) []byte {
-	// Fast path: if no bare \n exists, return as-is
+// findHeaderBodySplit returns the byte offset where the SIP body begins
+// (immediately after the blank-line separator). Returns -1 if no separator
+// is found, meaning the data is likely all headers.
+//
+// Handles all line-ending variants: \r\n\r\n, \n\n, \r\n\n, \n\r\n.
+func findHeaderBodySplit(data []byte) int {
+	for i := 0; i < len(data)-1; i++ {
+		if data[i] != '\n' {
+			continue
+		}
+		// We're at a \n. The next "line" starts at i+1.
+		// A blank line means the next char is also a line ending.
+		if data[i+1] == '\n' {
+			return i + 2 // \n\n
+		}
+		if data[i+1] == '\r' && i+2 < len(data) && data[i+2] == '\n' {
+			return i + 3 // \n\r\n
+		}
+	}
+	return -1
+}
+
+// normalizeCRLFBytes replaces bare \n (not preceded by \r) with \r\n.
+func normalizeCRLFBytes(data []byte) []byte {
+	// Fast path: if no \n exists, return as-is
 	if !bytes.Contains(data, []byte("\n")) {
 		return data
 	}
@@ -28,7 +48,7 @@ func normalizeCRLF(data []byte) []byte {
 
 	// Replace bare \n with \r\n
 	var buf bytes.Buffer
-	buf.Grow(len(data) + 64) // pre-allocate with some extra room
+	buf.Grow(len(data) + 64)
 	for i := 0; i < len(data); i++ {
 		if data[i] == '\n' && (i == 0 || data[i-1] != '\r') {
 			buf.WriteByte('\r')
@@ -36,6 +56,33 @@ func normalizeCRLF(data []byte) []byte {
 		buf.WriteByte(data[i])
 	}
 	return buf.Bytes()
+}
+
+// normalizeCRLF replaces bare \n with \r\n only in the SIP header section,
+// leaving the message body untouched. This prevents Content-Length / body-size
+// mismatch when an SBC (e.g. AudioCodes) sends bare LFs in the body: expanding
+// those LFs would make the body longer than Content-Length declares, causing
+// sipgo to truncate the body and break multipart SIPREC parsing.
+func normalizeCRLF(data []byte) []byte {
+	split := findHeaderBodySplit(data)
+	if split < 0 || split >= len(data) {
+		// No separator or no body — normalize everything (all headers)
+		return normalizeCRLFBytes(data)
+	}
+
+	headerSection := data[:split]
+	normalized := normalizeCRLFBytes(headerSection)
+	if len(normalized) == split {
+		// Headers unchanged — return original slice as-is
+		return data
+	}
+
+	// Headers expanded — rebuild: normalized headers + original body
+	body := data[split:]
+	result := make([]byte, len(normalized)+len(body))
+	copy(result, normalized)
+	copy(result[len(normalized):], body)
+	return result
 }
 
 // crlfPacketConn wraps a net.PacketConn to normalize bare \n to \r\n
@@ -50,20 +97,23 @@ func (c *crlfPacketConn) ReadFrom(p []byte) (int, net.Addr, error) {
 		return n, addr, err
 	}
 
+	// normalizeCRLF only touches headers (before the blank-line separator),
+	// leaving the body intact so Content-Length stays accurate.
 	normalized := normalizeCRLF(p[:n])
 	if len(normalized) == n {
-		// No change or same length — data is already in p
+		// No change — data is already in p (or same-length slice)
 		return n, addr, nil
 	}
 
-	// Normalized data is longer; copy back if it fits
+	// Normalized data is longer (header expansion); copy back if it fits.
+	// normalizeCRLF returns a fresh allocation when it changes data, so
+	// copying into p is safe even though body bytes originally lived there.
 	if len(normalized) <= len(p) {
 		copy(p, normalized)
 		return len(normalized), addr, nil
 	}
 
 	// Extremely unlikely: normalized data exceeds buffer.
-	// Copy what fits — sipgo will handle the truncation.
 	copy(p, normalized)
 	return len(p), addr, nil
 }
@@ -101,6 +151,7 @@ func (c *crlfConn) Read(p []byte) (int, error) {
 		return n, err
 	}
 
+	// normalizeCRLF only touches headers, leaving the body intact.
 	normalized := normalizeCRLF(p[:n])
 	if len(normalized) == n {
 		return n, err
