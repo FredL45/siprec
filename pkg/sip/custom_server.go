@@ -1200,7 +1200,12 @@ func (s *CustomSIPServer) handleSiprecInvite(message *SIPMessage) {
 		// and remove from callStates map via finalizeCall.
 		s.finalizeCall(message.CallID, callState, "failed")
 	}()
-
+	// FredL45 Debug
+	s.logger.WithFields(logrus.Fields{
+    "content_length_header": contentLengthFromHeader,
+    "actual_body_len":       len(message.Body),
+	}).Debug("Body size check before SIPREC parsing")
+	
 	// Extract SDP from multipart body for SIPREC
 	sdpData, rsMetadata := s.extractSiprecContent(message.Body, message.ContentType)
 
