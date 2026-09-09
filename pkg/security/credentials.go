@@ -259,7 +259,7 @@ func (cp *CredentialProvider) getFromSecureFile(name string) (string, error) {
 
 	// Read credentials file
 	credFile := filepath.Clean(fmt.Sprintf("%s/credentials.json", configDir))
-	data, err := os.ReadFile(credFile)
+	data, err := os.ReadFile(credFile) // #nosec G703 -- path derived from os.UserConfigDir(), not user input
 	if err != nil {
 		return "", err
 	}

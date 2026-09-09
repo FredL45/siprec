@@ -216,7 +216,7 @@ func (p *GoogleProviderEnhanced) setupAuthentication() error {
 		if _, err := os.Stat(p.config.CredentialsFile); err != nil {
 			return fmt.Errorf("credentials file not found: %s", p.config.CredentialsFile)
 		}
-		p.clientOptions = append(p.clientOptions, option.WithCredentialsFile(p.config.CredentialsFile))
+		p.clientOptions = append(p.clientOptions, option.WithAuthCredentialsFile(option.ServiceAccount, p.config.CredentialsFile))
 		p.logger.WithField("credentials_file", p.config.CredentialsFile).Info("Using service account credentials")
 		return nil
 	}
@@ -224,7 +224,7 @@ func (p *GoogleProviderEnhanced) setupAuthentication() error {
 	// Check for environment variable
 	if credFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); credFile != "" {
 		cleanCredFile := filepath.Clean(credFile)
-		if _, err := os.Stat(cleanCredFile); err != nil {
+		if _, err := os.Stat(cleanCredFile); err != nil { // #nosec G703 -- path from GOOGLE_APPLICATION_CREDENTIALS env var, not user input
 			return fmt.Errorf("credentials file from environment not found: %s", cleanCredFile)
 		}
 		p.logger.WithField("credentials_file", cleanCredFile).Info("Using credentials from environment")
@@ -283,7 +283,7 @@ func (p *GoogleProviderEnhanced) SetCredentialsFile(credentialsFile string) {
 		p.config = DefaultGoogleConfig()
 	}
 	p.config.CredentialsFile = credentialsFile
-	p.clientOptions = append(p.clientOptions, option.WithCredentialsFile(credentialsFile))
+	p.clientOptions = append(p.clientOptions, option.WithAuthCredentialsFile(option.ServiceAccount, credentialsFile))
 }
 
 // SetProjectID sets the Google Cloud project ID
