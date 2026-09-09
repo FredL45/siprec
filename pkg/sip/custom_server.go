@@ -1202,7 +1202,6 @@ func (s *CustomSIPServer) handleSiprecInvite(message *SIPMessage) {
 	}()
 	// FredL45 Debug
 	s.logger.WithFields(logrus.Fields{
-    "content_length_header": contentLengthFromHeader,
     "actual_body_len":       len(message.Body),
 	}).Debug("Body size check before SIPREC parsing")
 	
