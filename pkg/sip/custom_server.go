@@ -1202,8 +1202,10 @@ func (s *CustomSIPServer) handleSiprecInvite(message *SIPMessage) {
 	}()
 	// FredL45 Debug
 	s.logger.WithFields(logrus.Fields{
-    "actual_body_len":       len(message.Body),
-	}).Debug("Body size check before SIPREC parsing")
+    "has_crlf":     bytes.Contains(body, []byte("\r\n")),
+    "has_lone_lf":  bytes.Contains(body, []byte("\n")) && !bytes.Contains(body, []byte("\r\n")),
+    "last_80_bytes": fmt.Sprintf("%q", body[max(0, len(body)-80):]),
+	}).Debug("Raw body line-ending check")
 	
 	// Extract SDP from multipart body for SIPREC
 	sdpData, rsMetadata := s.extractSiprecContent(message.Body, message.ContentType)
