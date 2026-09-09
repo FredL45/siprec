@@ -1202,9 +1202,9 @@ func (s *CustomSIPServer) handleSiprecInvite(message *SIPMessage) {
 	}()
 	// FredL45 Debug
 	s.logger.WithFields(logrus.Fields{
-    "has_crlf":     bytes.Contains(body, []byte("\r\n")),
-    "has_lone_lf":  bytes.Contains(body, []byte("\n")) && !bytes.Contains(body, []byte("\r\n")),
-    "last_80_bytes": fmt.Sprintf("%q", body[max(0, len(body)-80):]),
+    "has_crlf":     bytes.Contains(message.Body, []byte("\r\n")),
+    "has_lone_lf":  bytes.Contains(message.Body, []byte("\n")) && !bytes.Contains(message.Body, []byte("\r\n")),
+    "last_80_bytes": fmt.Sprintf("%q", message.Body[max(0, len(message.Body)-80):]),
 	}).Debug("Raw body line-ending check")
 	
 	// Extract SDP from multipart body for SIPREC
