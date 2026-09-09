@@ -243,7 +243,8 @@ func ExtractRSMetadata(contentType string, body []byte) (*RSMetadata, error) {
 			continue
 		}
 
-		if strings.EqualFold(mediaType, "application/rs-metadata+xml") {
+		if strings.EqualFold(mediaType, "application/rs-metadata") ||
+		strings.EqualFold(mediaType, "application/rs-metadata+xml") {
 			// Read rs-metadata content
 			buf := new(strings.Builder)
 			_, err = io.Copy(buf, part)
