@@ -42,9 +42,9 @@ func (dm *DNSManager) gcpProjectAndZone() (string, string, error) {
 func (dm *DNSManager) gcpDNSService(ctx context.Context) (*gdns.Service, error) {
 	var opts []option.ClientOption
 	if keyJSON := dm.config.Credentials["service_account_key_json"]; keyJSON != "" {
-		opts = append(opts, option.WithCredentialsJSON([]byte(keyJSON)))
+		opts = append(opts, option.WithAuthCredentialsJSON(option.ServiceAccount, []byte(keyJSON)))
 	} else if keyPath := dm.config.Credentials["service_account_key_path"]; keyPath != "" {
-		opts = append(opts, option.WithCredentialsFile(keyPath))
+		opts = append(opts, option.WithAuthCredentialsFile(option.ServiceAccount, keyPath))
 	}
 
 	service, err := gdns.NewService(ctx, opts...)

@@ -37,9 +37,9 @@ func (lbm *LoadBalancerManager) validateGCPLBConfig() error {
 func (lbm *LoadBalancerManager) gcpComputeService(ctx context.Context) (*compute.Service, error) {
 	var opts []option.ClientOption
 	if lbm.config.GCPServiceAccountKeyJSON != "" {
-		opts = append(opts, option.WithCredentialsJSON([]byte(lbm.config.GCPServiceAccountKeyJSON)))
+		opts = append(opts, option.WithAuthCredentialsJSON(option.ServiceAccount, []byte(lbm.config.GCPServiceAccountKeyJSON)))
 	} else if lbm.config.GCPServiceAccountKeyPath != "" {
-		opts = append(opts, option.WithCredentialsFile(lbm.config.GCPServiceAccountKeyPath))
+		opts = append(opts, option.WithAuthCredentialsFile(option.ServiceAccount, lbm.config.GCPServiceAccountKeyPath))
 	}
 
 	service, err := compute.NewService(ctx, opts...)

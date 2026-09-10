@@ -522,7 +522,7 @@ func NewGCSStorage(config GCSConfig, logger *logrus.Logger) (*GCSStorage, error)
 	var err error
 
 	if config.ServiceAccountKey != "" {
-		client, err = storage.NewClient(context.Background(), option.WithCredentialsFile(config.ServiceAccountKey))
+		client, err = storage.NewClient(context.Background(), option.WithAuthCredentialsFile(option.ServiceAccount, config.ServiceAccountKey))
 	} else {
 		client, err = storage.NewClient(context.Background())
 	}

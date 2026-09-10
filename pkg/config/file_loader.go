@@ -166,7 +166,7 @@ func FindConfigFile() string {
 	// Check command line flag first (via CONFIG_FILE env var)
 	if configFile := os.Getenv("CONFIG_FILE"); configFile != "" {
 		cleanPath := filepath.Clean(configFile)
-		if _, err := os.Stat(cleanPath); err == nil {
+		if _, err := os.Stat(cleanPath); err == nil { // #nosec G703 -- path from CONFIG_FILE env var, not user input
 			return cleanPath
 		}
 	}

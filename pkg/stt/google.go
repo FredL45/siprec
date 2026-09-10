@@ -75,7 +75,7 @@ func (p *GoogleProvider) Initialize() error {
 		clientOptions = append(clientOptions, option.WithAPIKey(p.config.APIKey))
 		p.logger.Debug("Using Google STT API key authentication")
 	} else if p.config.CredentialsFile != "" {
-		clientOptions = append(clientOptions, option.WithCredentialsFile(p.config.CredentialsFile))
+		clientOptions = append(clientOptions, option.WithAuthCredentialsFile(option.ServiceAccount, p.config.CredentialsFile))
 		p.logger.WithField("credentials_file", p.config.CredentialsFile).Debug("Using Google STT credentials file")
 	} else {
 		p.logger.Warn("No Google STT credentials provided (API key or credentials file)")
