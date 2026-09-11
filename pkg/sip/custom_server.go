@@ -1960,6 +1960,7 @@ func (s *CustomSIPServer) handleSiprecInvite(message *SIPMessage) {
 		"Contact":   s.buildContactHeader(message),
 		"Supported": "siprec",
 		"Accept":    "application/sdp, application/rs-metadata, application/rs-metadata+xml, multipart/mixed",
+		"Allow":     "INVITE, ACK, CANCEL, BYE, UPDATE",
 	}
 
 	// RFC 7866: The SRS 200 OK response contains only application/sdp by default.
