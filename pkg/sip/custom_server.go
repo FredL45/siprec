@@ -1962,10 +1962,11 @@ func (s *CustomSIPServer) handleSiprecInvite(message *SIPMessage) {
 	}
 
 	// Create clean SDP response using existing media config
+	// Adding application/rs-metadata to support non fully compliant SBC
 	responseHeaders := map[string]string{
 		"Contact":   s.buildContactHeader(message),
 		"Supported": "siprec",
-		"Accept":    "application/sdp, application/rs-metadata+xml, multipart/mixed",
+		"Accept":    "application/sdp, application/rs-metadata, application/rs-metadata+xml, multipart/mixed",
 	}
 
 	// RFC 7866: The SRS 200 OK response contains only application/sdp by default.
@@ -2273,10 +2274,11 @@ func (s *CustomSIPServer) handleSiprecReInvite(message *SIPMessage, callState *C
 	}
 
 	// Generate response using existing RTP forwarder
+	// Adding application/rs-metadata to support non fully compliant SBC
 	responseHeaders := map[string]string{
 		"Contact":   s.buildContactHeader(message),
 		"Supported": "siprec",
-		"Accept":    "application/sdp, application/rs-metadata+xml, multipart/mixed",
+		"Accept":    "application/sdp, application/rs-metadata, application/rs-metadata+xml, multipart/mixed",
 	}
 
 	var responseSDP []byte
@@ -4225,6 +4227,7 @@ func (s *CustomSIPServer) extractSiprecContent(body []byte, contentType string) 
 		}
 		data := buf.Bytes()
 
+		// Adding application/rs-metadata to support non fully compliant SBC
 		switch partType {
 		case "application/sdp":
 			if err := security.ValidateSize(data, security.MaxSDPSize, "SDP"); err != nil {
@@ -4235,6 +4238,13 @@ func (s *CustomSIPServer) extractSiprecContent(body []byte, contentType string) 
 			s.logger.WithFields(logrus.Fields{
 				"sdp_size": len(sdpData),
 			}).Debug("Extracted SDP part from SIPREC multipart")
+		case "application/rs-metadata":
+			if err := security.ValidateSize(data, security.MaxMetadataSize, "SIPREC metadata"); err != nil {
+				s.logger.WithError(err).Warn("SIPREC metadata exceeds size limit")
+				continue
+			}
+			rsMetadata = append([]byte(nil), data...)
+			s.logger.WithField("metadata_size", len(rsMetadata)).Debug("Extracted rs-metadata part from SIPREC multipart")
 		case "application/rs-metadata+xml":
 			if err := security.ValidateSize(data, security.MaxMetadataSize, "SIPREC metadata"); err != nil {
 				s.logger.WithError(err).Warn("SIPREC metadata exceeds size limit")
