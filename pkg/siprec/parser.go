@@ -243,6 +243,7 @@ func ExtractRSMetadata(contentType string, body []byte) (*RSMetadata, error) {
 			continue
 		}
 
+		// Adding application/rs-metadata to support non fully compliant SBC
 		if strings.EqualFold(mediaType, "application/rs-metadata") ||
 		strings.EqualFold(mediaType, "application/rs-metadata+xml") {
 			// Read rs-metadata content
